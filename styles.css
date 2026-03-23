@@ -83,6 +83,8 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--muted);
+  text-decoration: none;
+  display: block;
 }
 
 .nav-item:hover {
@@ -172,6 +174,10 @@ h1 {
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 14px 30px rgba(15, 139, 141, 0.25);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .kpis {
@@ -365,6 +371,104 @@ h2 {
   color: #a85a00;
 }
 
+.card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.card-click {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-link:hover .card-click {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 70px rgba(31, 27, 22, 0.18);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.select {
+  border: 1px solid var(--outline);
+  background: #fff;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.table-wide {
+  display: grid;
+  gap: 8px;
+}
+
+.table-head,
+.table-row-wide {
+  display: grid;
+  grid-template-columns: 70px 140px 220px 140px 120px 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.table-head {
+  background: #fff1de;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.table-row-wide {
+  border: 1px solid #efe2d2;
+  background: #fff;
+  font-size: 13px;
+}
+
+.cell-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  border: 1px solid var(--outline);
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @keyframes floatIn {
   from {
     transform: translateY(12px);
@@ -404,6 +508,11 @@ h2 {
   .content {
     padding: 24px;
   }
+
+  .table-head,
+  .table-row-wide {
+    grid-template-columns: 70px 1fr 200px 120px 90px 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -422,6 +531,11 @@ h2 {
   }
 
   .table-row {
+    grid-template-columns: 1fr;
+  }
+
+  .table-head,
+  .table-row-wide {
     grid-template-columns: 1fr;
   }
 }
