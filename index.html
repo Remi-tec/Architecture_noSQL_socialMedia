@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard - MongoDB JSON</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">DB</div>
+        <div class="brand-text">
+          <div class="brand-title">Admin Dashboard</div>
+          <div class="brand-sub">MongoDB JSON</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item is-active">Overview</button>
+        <button class="nav-item">Users</button>
+        <button class="nav-item">Posts</button>
+        <button class="nav-item">Engagement</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          Data loaded from ./json
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">MongoDB Demo</div>
+          <h1>Community Analytics</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="date-chip" id="currentDate">--/--/----</div>
+          <button class="primary">Refresh</button>
+        </div>
+      </header>
+
+      <section class="kpis" id="kpis">
+        <div class="card kpi">
+          <div class="kpi-label">Users</div>
+          <div class="kpi-value" id="kpiUsers">--</div>
+          <div class="kpi-meta" id="kpiUsersMeta">--</div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-label">Posts</div>
+          <div class="kpi-value" id="kpiPosts">--</div>
+          <div class="kpi-meta" id="kpiPostsMeta">--</div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-label">Comments</div>
+          <div class="kpi-value" id="kpiComments">--</div>
+          <div class="kpi-meta" id="kpiCommentsMeta">--</div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-label">Likes</div>
+          <div class="kpi-value" id="kpiLikes">--</div>
+          <div class="kpi-meta" id="kpiLikesMeta">--</div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card chart-card">
+          <div class="card-head">
+            <h2>Top Posts by Likes</h2>
+            <span class="chip">Top 5</span>
+          </div>
+          <div class="bar-list" id="topPosts"></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-head">
+            <h2>Top Users by Posts</h2>
+            <span class="chip">Top 5</span>
+          </div>
+          <div class="bar-list" id="topUsers"></div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card list-card">
+          <div class="card-head">
+            <h2>Recent Posts</h2>
+            <span class="chip">Latest 8</span>
+          </div>
+          <div class="table" id="recentPosts"></div>
+        </div>
+
+        <div class="card list-card">
+          <div class="card-head">
+            <h2>Engagement Snapshot</h2>
+            <span class="chip">Avg / Post</span>
+          </div>
+          <div class="engagement" id="engagement"></div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card list-card">
+          <div class="card-head">
+            <h2>Most Active Users</h2>
+            <span class="chip">Comments + Likes</span>
+          </div>
+          <div class="table" id="activeUsers"></div>
+        </div>
+
+        <div class="card list-card">
+          <div class="card-head">
+            <h2>Data Health</h2>
+            <span class="chip">Integrity</span>
+          </div>
+          <div class="health" id="dataHealth"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
