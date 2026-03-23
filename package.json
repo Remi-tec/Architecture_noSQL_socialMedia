@@ -1,0 +1,14 @@
+{
+  "name": "projet_b_mongodb_dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Admin dashboard backed by MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongodb": "^6.7.0"
+  }
+}

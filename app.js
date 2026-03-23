@@ -1,8 +1,8 @@
 const DATA_FILES = {
-  users: "./json/users.json",
-  posts: "./json/posts.json",
-  comments: "./json/comments.json",
-  likes: "./json/likes.json"
+  users: "/api/users",
+  posts: "/api/posts",
+  comments: "/api/comments",
+  likes: "/api/likes"
 };
 
 const el = (id) => document.getElementById(id);
@@ -253,6 +253,6 @@ init().catch((error) => {
   console.error(error);
   el("kpis").insertAdjacentHTML(
     "afterend",
-    `<div class="card">Failed to load JSON data. Use a local server (Live Server) to allow fetch.</div>`
+    `<div class="card">Failed to load data. Start the API server (node server.js) and reload.</div>`
   );
 });
