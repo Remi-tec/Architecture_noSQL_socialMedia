@@ -206,7 +206,8 @@ const render = () => {
     }
   } else {
     const columns = view.columns;
-    const template = columns.map((column) => column.width || "1fr").join(" ");
+    const columnsWithIndex = [{ key: "_index", label: "#", width: "60px" }, ...columns];
+    const template = columnsWithIndex.map((column) => column.width || "1fr").join(" ");
     el("totalLabel").textContent = view.label;
     el("viewTitle").textContent = view.title;
     el("viewEyebrow").textContent = view.eyebrow;
@@ -215,9 +216,10 @@ const render = () => {
     tableEl.classList.add("table-wide");
     tableEl.classList.remove("post-grid");
     tableEl.classList.remove("profile-grid");
-    const tableRows = rows.map((row) => {
+    const tableRows = rows.map((row, index) => {
       const normalized = { ...row };
-      columns.forEach((column) => {
+      normalized._index = (state.page - 1) * pageSize + index + 1;
+      columnsWithIndex.forEach((column) => {
         if (column.key === "created") {
           const source = normalized.created ?? normalized.created_at;
           normalized[column.key] = formatShortDate(parseDate(source));
@@ -233,7 +235,8 @@ const render = () => {
       });
       return normalized;
     });
-    tableEl.innerHTML = buildHeader(columns, template) + buildRows(tableRows, columns, template);
+    tableEl.innerHTML =
+      buildHeader(columnsWithIndex, template) + buildRows(tableRows, columnsWithIndex, template);
   }
 };
 

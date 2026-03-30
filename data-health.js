@@ -71,9 +71,18 @@ const VIEWS = {
   }
 };
 
+const escapeHtml = (value) => {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+};
+
 const buildHeader = (columns, template) => {
   const labels = columns
-    .map((column) => `<div>${column.label}</div>`)
+    .map((column) => `<div>${escapeHtml(column.label)}</div>`)
     .join("");
 
   return `
@@ -89,7 +98,7 @@ const buildRows = (rows, columns, template) => {
       const cells = columns
         .map((column) => {
           const value = row[column.key] ?? "-";
-          return `<div class="cell-truncate" title="${String(value)}">${String(value)}</div>`;
+          return `<div class="cell-truncate" title="${escapeHtml(value)}">${escapeHtml(value)}</div>`;
         })
         .join("");
 
@@ -119,13 +128,15 @@ const render = () => {
   el("nextPage").disabled = state.page >= totalPages;
 
   const columns = view.columns;
-  const template = columns.map((column) => column.width || "1fr").join(" ");
+  const columnsWithIndex = [{ key: "_index", label: "#", width: "60px" }, ...columns];
+  const template = columnsWithIndex.map((column) => column.width || "1fr").join(" ");
   el("viewTitle").textContent = view.title;
   el("viewEyebrow").textContent = view.eyebrow;
 
-  const tableRows = rows.map((row) => {
+  const tableRows = rows.map((row, index) => {
     const normalized = { ...row };
-    columns.forEach((column) => {
+    normalized._index = (state.page - 1) * pageSize + index + 1;
+    columnsWithIndex.forEach((column) => {
       const value = normalized[column.key];
       if (column.key === "created_at") {
         normalized[column.key] = formatShortDate(parseDate(value));
@@ -138,7 +149,8 @@ const render = () => {
     return normalized;
   });
 
-  tableEl.innerHTML = buildHeader(columns, template) + buildRows(tableRows, columns, template);
+  tableEl.innerHTML =
+    buildHeader(columnsWithIndex, template) + buildRows(tableRows, columnsWithIndex, template);
 };
 
 const getViewKey = () => {

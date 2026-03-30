@@ -79,6 +79,7 @@ body {
   padding: 10px 14px;
   border-radius: 14px;
   font-weight: 600;
+  font-family: inherit;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -211,6 +212,21 @@ h1 {
   justify-content: center;
 }
 
+.danger {
+  background: #c0362c;
+  color: #fff;
+  border: 1px solid #b02a22;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 24px rgba(192, 54, 44, 0.22);
+}
+
 .icon-btn {
   width: 36px;
   height: 36px;
@@ -222,6 +238,118 @@ h1 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  gap: 12px;
+}
+
+.form-grid-fields {
+  margin-top: 16px;
+}
+
+.form-field {
+  display: grid;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.readonly-value {
+  padding: 10px 0;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 1px dashed var(--outline);
+}
+
+.input {
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  background: #fff;
+}
+
+.input[readonly] {
+  border: 0;
+  background: transparent;
+  padding-left: 0;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.form-actions-split {
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.is-hidden {
+  display: none;
+}
+
+.toast {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 1000;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  background: #fff;
+  box-shadow: var(--shadow);
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.is-success {
+  border-color: #bfe5d5;
+  background: #eaf7f1;
+  color: #1b6b50;
+}
+
+.toast.is-error {
+  border-color: #f0c7c3;
+  background: #fff0ef;
+  color: #8b2e28;
+}
+
+.is-clickable {
+  cursor: pointer;
 }
 
 .kpis {

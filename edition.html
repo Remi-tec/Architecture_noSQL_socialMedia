@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edition - Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">DB</div>
+        <div class="brand-text">
+          <div class="brand-title">Admin Dashboard</div>
+          <div class="brand-sub">MongoDB JSON</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="nav-item" href="index.html">Overview</a>
+        <a class="nav-item" href="users.html?view=top-users">Details</a>
+        <button class="nav-item is-active">Edition</button>
+        <a class="nav-item" href="data-health.html">Data Health</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          Data loaded from API
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <div class="eyebrow" id="viewEyebrow">Edition</div>
+          <div class="topbar-row">
+            <h1 id="viewTitle">Users</h1>
+            <div class="topbar-actions">
+              <button class="icon-btn" id="prevView" type="button" aria-label="Previous view">&lt;</button>
+              <button class="icon-btn" id="nextView" type="button" aria-label="Next view">&gt;</button>
+              <button class="secondary" id="detailToggle" type="button">Classic</button>
+              <a class="primary" href="index.html">Back to Overview</a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="card" id="tableSection">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <strong id="totalRows">--</strong>
+            <span class="table-meta" id="totalLabel">rows</span>
+            <button class="icon-btn" id="addContentBtn" title="Ajouter un contenu" aria-label="Ajouter un contenu" style="margin-left: 8px; font-size: 1.2em;">+</button>
+          </div>
+          <div class="toolbar-group">
+            <label for="pageSize" class="table-meta">Rows per page</label>
+            <select id="pageSize" class="select">
+              <option value="10">10</option>
+              <option value="25" selected>25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wide" id="editTable"></div>
+
+        <div class="pager">
+          <button class="page-btn" id="prevPage">Previous</button>
+          <div class="table-meta" id="pageInfo">Page -- of --</div>
+          <button class="page-btn" id="nextPage">Next</button>
+        </div>
+      </section>
+
+      <section class="card edit-panel is-hidden" id="editPanel">
+        <div class="card-head">
+          <h2 id="formTitle">Edit User</h2>
+          <button class="secondary" id="closeEditPanel" type="button">Back to table</button>
+        </div>
+        <div class="table-meta" id="selectedMeta">No item selected</div>
+        <form class="edit-form" id="editForm">
+          <div class="form-grid form-grid-fields" id="editFields">
+            <!-- Un seul bloc par champ, dans l'ordre maximal -->
+            <div class="form-field" data-field="comment_id">
+              <label>Comment ID</label>
+              <div class="readonly-value" id="comment_id"></div>
+            </div>
+            <div class="form-field" data-field="like_id">
+              <label>Like ID</label>
+              <div class="readonly-value" id="like_id"></div>
+            </div>
+            <div class="form-field" data-field="user_id">
+              <label>User ID</label>
+              <div class="readonly-value" id="user_id"></div>
+            </div>
+            <div class="form-field" data-field="post_id">
+              <label for="post_id">Post ID</label>
+              <input class="input" id="post_id" name="post_id" type="number" />
+            </div>
+            <div class="form-field" data-field="username">
+              <label for="username">Username</label>
+              <input class="input" id="username" name="username" type="text" />
+            </div>
+            <div class="form-field" data-field="email">
+              <label for="email">Email</label>
+              <input class="input" id="email" name="email" type="email" />
+            </div>
+            <div class="form-field" data-field="user_id_ref">
+              <label for="user_id_ref">User ID (ref)</label>
+              <input class="input" id="user_id_ref" name="user_id_ref" type="number" />
+            </div>
+            <div class="form-field" data-field="created_at">
+              <label for="created_at">Created At</label>
+              <input class="input" id="created_at" name="created_at" type="text" placeholder="DD/MM/YYYY" />
+            </div>
+            <div class="form-field" data-field="bio">
+              <label for="bio">Bio</label>
+              <input class="input" id="bio" name="bio" type="text" />
+            </div>
+            <div class="form-field" data-field="content">
+              <label for="content">Content</label>
+              <input class="input" id="content" name="content" type="text" />
+            </div>
+            <div class="form-field" data-field="likes_count">
+              <label for="likes_count">Likes Count</label>
+              <input class="input" id="likes_count" name="likes_count" type="number" />
+            </div>
+          </div>
+
+          <div class="form-actions form-actions-split">
+            <span id="deleteBtnWrapper"><button class="danger" id="deleteBtn" type="button">Delete</button></span>
+            <button class="primary" id="updateBtn" type="submit">Update</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="edition.js"></script>
+</body>
+</html>

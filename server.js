@@ -19,8 +19,15 @@ const SORT_FIELDS = {
   comments: new Set(["comment_id", "post_id", "user_id", "created_at"]),
   likes: new Set(["like_id", "post_id", "user_id", "created_at"])
 };
+const ID_FIELDS = {
+  users: "user_id",
+  posts: "post_id",
+  comments: "comment_id",
+  likes: "like_id"
+};
 
 const app = express();
+app.use(express.json());
 app.use(express.static(__dirname));
 
 let client;
@@ -423,8 +430,99 @@ app.get("/api/:collection", async (req, res) => {
       cursor.skip((safePage - 1) * limit).limit(limit);
     }
 
-    const data = await cursor.toArray();
-    return res.json(data);
+    const [items, total] = await Promise.all([
+      cursor.toArray(),
+      db.collection(collection).countDocuments()
+    ]);
+
+    if (req.query.meta === "1" || req.query.meta === "true") {
+      return res.json({ items, total });
+    }
+
+    return res.json(items);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/:collection", async (req, res) => {
+  const collection = req.params.collection;
+  if (!ALLOWED_COLLECTIONS.has(collection)) {
+    return res.status(404).json({ error: "Unknown collection" });
+  }
+
+  const payload = req.body;
+  if (!payload || typeof payload !== "object") {
+    return res.status(400).json({ error: "Invalid payload" });
+  }
+
+  const idField = ID_FIELDS[collection];
+  if (payload[idField] == null) {
+    return res.status(400).json({ error: `Missing ${idField}` });
+  }
+
+  try {
+    await db.collection(collection).insertOne(payload);
+    return res.status(201).json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.delete("/api/:collection/:id", async (req, res) => {
+  const collection = req.params.collection;
+  if (!ALLOWED_COLLECTIONS.has(collection)) {
+    return res.status(404).json({ error: "Unknown collection" });
+  }
+
+  const idField = ID_FIELDS[collection];
+  const idValue = parseInt(req.params.id, 10);
+  if (!Number.isInteger(idValue)) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+
+  try {
+    const result = await db.collection(collection).deleteOne({ [idField]: idValue });
+    if (!result.deletedCount) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.put("/api/:collection/:id", async (req, res) => {
+  const collection = req.params.collection;
+  if (!ALLOWED_COLLECTIONS.has(collection)) {
+    return res.status(404).json({ error: "Unknown collection" });
+  }
+
+  const idField = ID_FIELDS[collection];
+  const idValue = parseInt(req.params.id, 10);
+  if (!Number.isInteger(idValue)) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+
+  const payload = req.body;
+  if (!payload || typeof payload !== "object") {
+    return res.status(400).json({ error: "Invalid payload" });
+  }
+
+  const updatePayload = { ...payload };
+  delete updatePayload[idField];
+
+  try {
+    const result = await db
+      .collection(collection)
+      .updateOne({ [idField]: idValue }, { $set: updatePayload });
+    if (!result.matchedCount) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    return res.json({ ok: true });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Server error" });
