@@ -98,9 +98,14 @@
               <label>User ID</label>
               <div class="readonly-value" id="user_id"></div>
             </div>
-            <div class="form-field" data-field="post_id">
-              <label for="post_id">Post ID</label>
-              <input class="input" id="post_id" name="post_id" type="number" />
+            <!-- Post ID: readonly for Posts, input for Comments/Likes -->
+            <div class="form-field" data-field="post_id" id="postIdReadonlyField">
+              <label>Post ID</label>
+              <div class="readonly-value" id="post_id"></div>
+            </div>
+            <div class="form-field" data-field="post_id" id="postIdInputField" style="display:none">
+              <label for="post_id_input">Post ID</label>
+              <input class="input" id="post_id_input" name="post_id_input" type="number" />
             </div>
             <div class="form-field" data-field="username">
               <label for="username">Username</label>
@@ -115,8 +120,8 @@
               <input class="input" id="user_id_ref" name="user_id_ref" type="number" />
             </div>
             <div class="form-field" data-field="created_at">
-              <label for="created_at">Created At</label>
-              <input class="input" id="created_at" name="created_at" type="text" placeholder="DD/MM/YYYY" />
+              <label>Created At</label>
+              <div class="readonly-value" id="created_at"></div>
             </div>
             <div class="form-field" data-field="bio">
               <label for="bio">Bio</label>

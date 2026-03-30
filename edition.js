@@ -328,8 +328,19 @@ const populateEditForm = (row) => {
   const idValue = row[config.idField];
   meta.textContent = `${config.title.slice(0, -1)} #${idValue}`;
 
+  // Toggle post_id field type
+  const postIdReadonly = document.getElementById("postIdReadonlyField");
+  const postIdInput = document.getElementById("postIdInputField");
+  if (state.view === "posts") {
+    if (postIdReadonly) postIdReadonly.style.display = "grid";
+    if (postIdInput) postIdInput.style.display = "none";
+  } else {
+    if (postIdReadonly) postIdReadonly.style.display = "none";
+    if (postIdInput) postIdInput.style.display = "grid";
+  }
+
   // Set all fields to empty by default
-  ["user_id", "post_id", "comment_id", "like_id", "username", "email", "user_id_ref", "created_at", "bio", "content", "likes_count"].forEach((fieldId) => {
+  ["user_id", "post_id", "post_id_input", "comment_id", "like_id", "username", "email", "user_id_ref", "created_at", "bio", "content", "likes_count"].forEach((fieldId) => {
     const elField = el(fieldId);
     if (!elField) return;
     if (elField.tagName === "INPUT") {
@@ -345,6 +356,16 @@ const populateEditForm = (row) => {
     if (key === "user_id" && config.createFields.includes("user_id_ref")) {
       const refInput = el("user_id_ref");
       if (refInput && refInput.tagName === "INPUT") refInput.value = value ?? "";
+    }
+    if (key === "post_id") {
+      if (state.view === "posts") {
+        const elField = el("post_id");
+        if (elField) elField.textContent = value ?? "-";
+      } else {
+        const elField = el("post_id_input");
+        if (elField) elField.value = value ?? "";
+      }
+      return;
     }
     const elField = el(key);
     if (!elField) return;
@@ -387,6 +408,17 @@ const updateFormVisibility = () => {
   const config = COLLECTION_CONFIG[state.view];
   el("formTitle").textContent = `Edit ${config.title.slice(0, -1)}`;
 
+  // Toggle post_id field type
+  const postIdReadonly = document.getElementById("postIdReadonlyField");
+  const postIdInput = document.getElementById("postIdInputField");
+  if (state.view === "posts") {
+    if (postIdReadonly) postIdReadonly.style.display = "grid";
+    if (postIdInput) postIdInput.style.display = "none";
+  } else {
+    if (postIdReadonly) postIdReadonly.style.display = "none";
+    if (postIdInput) postIdInput.style.display = "grid";
+  }
+
   const fields = document.querySelectorAll(".form-field");
   fields.forEach((field) => {
     field.style.display = "none";
@@ -397,6 +429,17 @@ const updateFormVisibility = () => {
   });
 
   config.createFields.forEach((fieldId) => {
+    // Special handling for post_id
+    if (fieldId === "post_id") {
+      if (state.view === "posts") {
+        const target = document.getElementById("postIdReadonlyField");
+        if (target) target.style.display = "grid";
+      } else {
+        const target = document.getElementById("postIdInputField");
+        if (target) target.style.display = "grid";
+      }
+      return;
+    }
     const target = document.querySelector(`[data-field="${fieldId}"]`);
     if (target) {
       target.style.display = "grid";
@@ -416,15 +459,39 @@ const buildUpdatePayload = () => {
   const payload = {};
 
   config.createFields.forEach((fieldId) => {
-    const input = el(fieldId);
-    if (!input || input.tagName !== "INPUT") return;
-    const value = input.value.trim();
-    if (!value) return;
-
-    if (input.type === "number") {
-      payload[fieldId] = Number(value);
+    // Special handling for post_id
+    if (fieldId === "post_id") {
+      if (state.view === "posts") {
+        const elField = el("post_id");
+        if (elField) {
+          const value = elField.textContent.trim();
+          if (value && value !== "-") payload[fieldId] = value;
+        }
+      } else {
+        const elField = el("post_id_input");
+        if (elField) {
+          const value = elField.value.trim();
+          if (value) payload[fieldId] = Number(value);
+        }
+      }
+      return;
+    }
+    const elField = el(fieldId);
+    if (!elField) return;
+    if (elField.tagName === "INPUT") {
+      const value = elField.value.trim();
+      if (!value) return;
+      if (elField.type === "number") {
+        payload[fieldId] = Number(value);
+      } else {
+        payload[fieldId] = value;
+      }
     } else {
-      payload[fieldId] = value;
+      // readonly-value divs (id, created_at)
+      if (fieldId === config.idField || fieldId === "created_at") {
+        const value = elField.textContent.trim();
+        if (value && value !== "-") payload[fieldId] = value;
+      }
     }
   });
 
@@ -433,8 +500,7 @@ const buildUpdatePayload = () => {
     delete payload.user_id_ref;
   }
 
-  delete payload[config.idField];
-
+  // Do not delete id field, we need it for update
   return payload;
 };
 
@@ -545,23 +611,69 @@ const init = async () => {
 
   el("editForm").addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!state.selectedId) return;
-    const payload = buildUpdatePayload();
+    const config = COLLECTION_CONFIG[state.view];
+    const isCreate = !state.selectedId;
+    let payload = buildUpdatePayload();
     if (!payload || Object.keys(payload).length === 0) return;
 
-    try {
-      await loadJson(`/api/${state.view}/${state.selectedId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      showToast("Updated successfully", "success");
-      await loadData();
-      render();
-      hideEditPanel();
-    } catch (error) {
-      console.error(error);
-      showToast("Update failed", "error");
+    if (isCreate) {
+      // Générer la date du jour
+      const now = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+      if (config.createFields.includes("created_at")) {
+        payload.created_at = dateStr;
+        const createdAtDiv = el("created_at");
+        if (createdAtDiv) createdAtDiv.textContent = dateStr;
+      }
+      // Générer l'id comme max+1
+      if (config.createFields.includes(config.idField)) {
+        let maxId = 0;
+        if (state.rows && state.rows.length > 0) {
+          // Cherche le max id numérique
+          state.rows.forEach(row => {
+            const val = Number(row[config.idField]);
+            if (!isNaN(val) && val > maxId) maxId = val;
+          });
+        }
+        payload[config.idField] = maxId + 1;
+        const idDiv = el(config.idField);
+        if (idDiv && idDiv.tagName !== "INPUT") idDiv.textContent = payload[config.idField];
+      }
+      // Correction user_id_ref -> user_id si besoin
+      if (payload.user_id_ref != null) {
+        payload.user_id = payload.user_id_ref;
+        delete payload.user_id_ref;
+      }
+      try {
+        await loadJson(`/api/${state.view}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        showToast("Created successfully", "success");
+        await loadData();
+        render();
+        hideEditPanel();
+      } catch (error) {
+        console.error(error);
+        showToast("Create failed", "error");
+      }
+    } else {
+      try {
+        await loadJson(`/api/${state.view}/${state.selectedId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        showToast("Updated successfully", "success");
+        await loadData();
+        render();
+        hideEditPanel();
+      } catch (error) {
+        console.error(error);
+        showToast("Update failed", "error");
+      }
     }
   });
 
