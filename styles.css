@@ -180,6 +180,33 @@ h1 {
   justify-content: center;
 }
 
+.secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -207,6 +234,7 @@ h1 {
   background: radial-gradient(circle, rgba(239, 108, 0, 0.08), transparent 70%);
   top: -80px;
   right: -60px;
+  pointer-events: none;
 }
 
 .kpi-label {
@@ -414,6 +442,117 @@ h2 {
 .table-wide {
   display: grid;
   gap: 8px;
+}
+
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.post-card {
+  border: 1px solid #efe2d2;
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 170px;
+}
+
+.profile-card {
+  border: 1px solid #efe2d2;
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 190px;
+}
+
+.post-card-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.profile-card-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.post-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.profile-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.post-card-body {
+  font-size: 13px;
+  color: var(--ink);
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+.profile-card-body {
+  font-size: 13px;
+  color: var(--ink);
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+
+.post-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.profile-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.post-chip {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff4e7;
+  border: 1px solid var(--outline);
+  color: var(--muted);
+}
+
+.profile-chip {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff4e7;
+  border: 1px solid var(--outline);
+  color: var(--muted);
 }
 
 .table-head,

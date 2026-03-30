@@ -47,8 +47,11 @@ const state = {
   likes: [],
   page: 1,
   pageSize: 25,
-  view: "top-users"
+  view: "top-users",
+  showDetails: false
 };
+
+const VIEW_ORDER = ["top-users", "top-posts", "recent-posts", "active-users"];
 
 const escapeHtml = (value) => {
   return String(value)
@@ -80,6 +83,7 @@ const VIEWS = {
         .map((user) => {
           const count = postsCountByUser.get(user.user_id) || 0;
           return {
+            userId: user.user_id,
             username: user.username || "-",
             posts: formatNumber(count),
             sortValue: count
@@ -100,6 +104,7 @@ const VIEWS = {
     buildRows: ({ posts }) => {
       return [...posts]
         .map((post) => ({
+          postId: post.post_id,
           post: `Post #${post.post_id}`,
           likes: formatNumber(post.likes_count || 0),
           sortValue: post.likes_count || 0
@@ -123,6 +128,7 @@ const VIEWS = {
         .map((post) => {
           const created = parseDate(post.created_at);
           return {
+            postId: post.post_id,
             post: `Post #${post.post_id}`,
             created: formatShortDate(created),
             likes: formatNumber(post.likes_count || 0),
@@ -160,6 +166,7 @@ const VIEWS = {
         .map((user) => {
           const actions = (commentsByUser.get(user.user_id) || 0) + (likesByUser.get(user.user_id) || 0);
           return {
+            userId: user.user_id,
             username: user.username || "-",
             actions: formatNumber(actions),
             sortValue: actions
@@ -212,13 +219,123 @@ const computeRows = (viewKey) => {
   });
 };
 
+const buildPostGridRows = (viewKey) => {
+  const userMap = new Map(state.users.map((user) => [user.user_id, user]));
+  const postMap = new Map(state.posts.map((post) => [post.post_id, post]));
+  const viewRows = computeRows(viewKey);
+
+  const postRows = (post) => {
+    const created = parseDate(post.created_at);
+    const user = userMap.get(post.user_id);
+    return {
+      postId: post.post_id,
+      title: `Post #${post.post_id}`,
+      created: formatShortDate(created),
+      likes: formatNumber(post.likes_count || 0),
+      author: user?.username || `User #${post.user_id}`,
+      content: post.content || "-"
+    };
+  };
+
+  if (viewKey === "top-posts" || viewKey === "recent-posts") {
+    return viewRows
+      .map((row) => postMap.get(row.postId))
+      .filter(Boolean)
+      .map((post) => postRows(post));
+  }
+
+  const postsByUser = new Map();
+  state.posts.forEach((post) => {
+    if (!postsByUser.has(post.user_id)) {
+      postsByUser.set(post.user_id, []);
+    }
+    postsByUser.get(post.user_id).push(post);
+  });
+
+  return viewRows
+    .flatMap((row) => postsByUser.get(row.userId) || [])
+    .map((post) => postRows(post));
+};
+
+const buildUserGridRows = (viewKey) => {
+  const userMap = new Map(state.users.map((user) => [user.user_id, user]));
+  const viewRows = computeRows(viewKey);
+
+  return viewRows.map((row) => {
+    const user = userMap.get(row.userId);
+    const created = parseDate(user?.created_at);
+    const metric = row.posts ?? row.actions ?? "-";
+    const metricLabel = row.posts ? "Posts" : row.actions ? "Actions" : "Score";
+
+    return {
+      userId: row.userId,
+      username: user?.username || row.username || "-",
+      email: user?.email || "-",
+      created: formatShortDate(created),
+      bio: user?.bio || "-",
+      metric,
+      metricLabel
+    };
+  });
+};
+
+const buildPostsGrid = (rows) => {
+  return rows
+    .map(
+      (row) => `
+        <article class="post-card">
+          <div class="post-card-title">${escapeHtml(row.title)}</div>
+          <div class="post-card-meta">
+            <span>${escapeHtml(row.created)}</span>
+            <span>${escapeHtml(row.likes)} likes</span>
+          </div>
+          <p class="post-card-body">${escapeHtml(row.content)}</p>
+          <div class="post-card-footer">
+            <span class="post-chip">${escapeHtml(row.author)}</span>
+            <span class="post-chip">ID ${escapeHtml(row.postId)}</span>
+          </div>
+        </article>
+      `
+    )
+    .join("");
+};
+
+const buildUserGrid = (rows) => {
+  return rows
+    .map(
+      (row) => `
+        <article class="profile-card">
+          <div class="profile-card-title">${escapeHtml(row.username)}</div>
+          <div class="profile-card-meta">
+            <span>${escapeHtml(row.email)}</span>
+            <span>${escapeHtml(row.created)}</span>
+          </div>
+          <p class="profile-card-body">${escapeHtml(row.bio)}</p>
+          <div class="profile-card-footer">
+            <span class="profile-chip">ID ${escapeHtml(row.userId)}</span>
+            <span class="profile-chip">${escapeHtml(row.metric)} ${escapeHtml(row.metricLabel)}</span>
+          </div>
+        </article>
+      `
+    )
+    .join("");
+};
+
 const render = () => {
-  const rows = computeRows(state.view);
   const view = VIEWS[state.view];
-  const columns = view.columns;
-  const template = columns.map((column) => column.width || "1fr").join(" ");
-  const totalRows = rows.length;
   const pageSize = state.pageSize;
+  const tableEl = el("usersTable");
+  const detailToggle = el("detailToggle");
+  const isUserView = state.view === "top-users" || state.view === "active-users";
+
+  let rows = [];
+  if (state.showDetails) {
+    rows = isUserView ? buildUserGridRows(state.view) : buildPostGridRows(state.view);
+  } else {
+    rows = computeRows(state.view);
+  }
+
+  const totalRows = rows.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
   state.page = Math.min(state.page, totalPages);
 
@@ -226,13 +343,39 @@ const render = () => {
   const pageRows = rows.slice(start, start + pageSize);
 
   el("totalRows").textContent = formatNumber(totalRows);
-  el("totalLabel").textContent = view.label;
   el("pageInfo").textContent = `Page ${state.page} of ${totalPages}`;
-
   el("prevPage").disabled = state.page <= 1;
   el("nextPage").disabled = state.page >= totalPages;
 
-  el("usersTable").innerHTML = buildHeader(columns, template) + buildRows(pageRows, columns, template);
+  if (state.showDetails) {
+    detailToggle.textContent = "Table view";
+    detailToggle.setAttribute("aria-pressed", "true");
+    tableEl.classList.remove("table-wide");
+
+    if (isUserView) {
+      el("totalLabel").textContent = "users";
+      tableEl.classList.add("profile-grid");
+      tableEl.classList.remove("post-grid");
+      tableEl.innerHTML = buildUserGrid(pageRows);
+    } else {
+      el("totalLabel").textContent = "posts";
+      tableEl.classList.add("post-grid");
+      tableEl.classList.remove("profile-grid");
+      tableEl.innerHTML = buildPostsGrid(pageRows);
+    }
+  } else {
+    const columns = view.columns;
+    const template = columns.map((column) => column.width || "1fr").join(" ");
+    el("totalLabel").textContent = view.label;
+    el("viewTitle").textContent = view.title;
+    el("viewEyebrow").textContent = view.eyebrow;
+    detailToggle.textContent = "Classic";
+    detailToggle.setAttribute("aria-pressed", "false");
+    tableEl.classList.add("table-wide");
+    tableEl.classList.remove("post-grid");
+    tableEl.classList.remove("profile-grid");
+    tableEl.innerHTML = buildHeader(columns, template) + buildRows(pageRows, columns, template);
+  }
 };
 
 const getViewKey = () => {
@@ -249,6 +392,37 @@ const loadData = async (viewKey) => {
   view.load.forEach((key, index) => {
     state[key] = results[index];
   });
+};
+
+const updateViewTooltips = () => {
+  const currentIndex = VIEW_ORDER.indexOf(state.view);
+  const prevKey = VIEW_ORDER[(currentIndex - 1 + VIEW_ORDER.length) % VIEW_ORDER.length];
+  const nextKey = VIEW_ORDER[(currentIndex + 1) % VIEW_ORDER.length];
+
+  el("prevView").setAttribute("title", VIEWS[prevKey].title);
+  el("nextView").setAttribute("title", VIEWS[nextKey].title);
+};
+
+const applyView = async (viewKey, keepDetails = false) => {
+  state.view = viewKey;
+  state.showDetails = keepDetails;
+  state.page = 1;
+  await loadData(viewKey);
+  if (state.showDetails) {
+    await ensureLoaded("users");
+    await ensureLoaded("posts");
+  }
+  const view = VIEWS[viewKey];
+  el("viewTitle").textContent = view.title;
+  el("viewEyebrow").textContent = view.eyebrow;
+  document.title = `${VIEWS[viewKey].title} - Admin Dashboard`;
+  updateViewTooltips();
+  render();
+};
+
+const ensureLoaded = async (key) => {
+  if (state[key] && state[key].length) return;
+  state[key] = await loadJson(DATA_FILES[key]);
 };
 
 const init = async () => {
@@ -269,6 +443,28 @@ const init = async () => {
     render();
   });
 
+  el("detailToggle").addEventListener("click", async () => {
+    state.showDetails = !state.showDetails;
+    if (state.showDetails) {
+      await ensureLoaded("posts");
+      await ensureLoaded("users");
+      state.page = 1;
+    }
+    render();
+  });
+
+  el("prevView").addEventListener("click", async () => {
+    const currentIndex = VIEW_ORDER.indexOf(state.view);
+    const nextIndex = (currentIndex - 1 + VIEW_ORDER.length) % VIEW_ORDER.length;
+    await applyView(VIEW_ORDER[nextIndex], state.showDetails);
+  });
+
+  el("nextView").addEventListener("click", async () => {
+    const currentIndex = VIEW_ORDER.indexOf(state.view);
+    const nextIndex = (currentIndex + 1) % VIEW_ORDER.length;
+    await applyView(VIEW_ORDER[nextIndex], state.showDetails);
+  });
+
   el("prevPage").addEventListener("click", () => {
     state.page = Math.max(1, state.page - 1);
     render();
@@ -280,6 +476,7 @@ const init = async () => {
   });
 
   render();
+  updateViewTooltips();
 };
 
 init().catch((error) => {
