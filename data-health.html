@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Users - Admin Dashboard</title>
+  <title>Data Health - Admin Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet" />
@@ -21,9 +21,9 @@
       </div>
       <nav class="nav">
         <a class="nav-item" href="index.html">Overview</a>
-        <button class="nav-item is-active">Détails</button>
+        <a class="nav-item" href="users.html?view=top-users">Details</a>
         <button class="nav-item">Posts</button>
-        <a class="nav-item" href="data-health.html">Data Health</a>
+        <button class="nav-item is-active">Data Health</button>
       </nav>
       <div class="sidebar-footer">
         <div class="status-pill">
@@ -36,13 +36,12 @@
     <main class="content">
       <header class="topbar">
         <div class="topbar-title">
-          <div class="eyebrow" id="viewEyebrow">Users</div>
+          <div class="eyebrow" id="viewEyebrow">Data Health</div>
           <div class="topbar-row">
-            <h1 id="viewTitle">Top Users by Posts</h1>
+            <h1 id="viewTitle">Orphan Comments</h1>
             <div class="topbar-actions">
               <button class="icon-btn" id="prevView" type="button" aria-label="Previous view">&lt;</button>
               <button class="icon-btn" id="nextView" type="button" aria-label="Next view">&gt;</button>
-              <button class="secondary" id="detailToggle" type="button">Classic</button>
               <a class="primary" href="index.html">Back to Overview</a>
             </div>
           </div>
@@ -66,16 +65,7 @@
           </div>
         </div>
 
-        <div class="table-wide" id="usersTable">
-          <div class="table-head">
-            <div>User ID</div>
-            <div>Username</div>
-            <div>Email</div>
-            <div>Created</div>
-            <div>Posts</div>
-            <div>Bio</div>
-          </div>
-        </div>
+        <div class="table-wide" id="healthTable"></div>
 
         <div class="pager">
           <button class="page-btn" id="prevPage">Previous</button>
@@ -86,6 +76,6 @@
     </main>
   </div>
 
-  <script src="users.js"></script>
+  <script src="data-health.js"></script>
 </body>
 </html>

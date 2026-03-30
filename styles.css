@@ -138,6 +138,23 @@ body {
   margin-bottom: 26px;
 }
 
+.topbar-title {
+  width: 100%;
+}
+
+.topbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.topbar-row h1 {
+  margin: 0;
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 2px;

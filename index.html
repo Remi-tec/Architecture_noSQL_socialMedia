@@ -23,12 +23,12 @@
         <button class="nav-item is-active">Overview</button>
         <a class="nav-item" href="users.html?view=top-users">Détails</a>
         <button class="nav-item">Posts</button>
-        <button class="nav-item">Engagement</button>
+        <a class="nav-item" href="data-health.html">Data Health</a>
       </nav>
       <div class="sidebar-footer">
         <div class="status-pill">
           <span class="status-dot"></span>
-          Data loaded from ./json
+          Data loaded from API
         </div>
       </div>
     </aside>
@@ -115,19 +115,21 @@
           <div class="card list-card card-click">
             <div class="card-head">
               <h2>Most Active Users</h2>
-              <span class="chip">Comments + Likes</span>
+              <span class="chip">Actions</span>
             </div>
             <div class="table" id="activeUsers"></div>
           </div>
         </a>
 
-        <div class="card list-card">
-          <div class="card-head">
-            <h2>Data Health</h2>
-            <span class="chip">Integrity</span>
+        <a class="card-link" href="data-health.html" aria-label="Open Data Health details">
+          <div class="card list-card card-click">
+            <div class="card-head">
+              <h2>Data Health</h2>
+              <span class="chip">Integrity</span>
+            </div>
+            <div class="health" id="dataHealth"></div>
           </div>
-          <div class="health" id="dataHealth"></div>
-        </div>
+        </a>
       </section>
     </main>
   </div>

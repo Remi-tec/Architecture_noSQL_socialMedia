@@ -1,8 +1,10 @@
 const DATA_FILES = {
-  users: "/api/users",
-  posts: "/api/posts",
-  comments: "/api/comments",
-  likes: "/api/likes"
+  kpis: "/api/stats/kpis",
+  health: "/api/stats/health",
+  topUsers: "/api/view/top-users?limit=5&page=1",
+  topPosts: "/api/view/top-posts?limit=5&page=1",
+  recentPosts: "/api/view/recent-posts?limit=8&page=1&detail=1",
+  activeUsers: "/api/view/active-users?limit=8&page=1&detail=1"
 };
 
 const el = (id) => document.getElementById(id);
@@ -32,34 +34,12 @@ const formatShortDate = (date) => {
   }).format(date);
 };
 
-const sum = (arr, key) => arr.reduce((acc, item) => acc + (item[key] || 0), 0);
-
-const groupBy = (arr, key) => {
-  const map = new Map();
-  arr.forEach((item) => {
-    const k = item[key];
-    if (!map.has(k)) map.set(k, []);
-    map.get(k).push(item);
-  });
-  return map;
-};
-
 const loadJson = async (path) => {
   const response = await fetch(path);
   if (!response.ok) {
     throw new Error(`Cannot load ${path}`);
   }
   return response.json();
-};
-
-const computeHealth = (posts, comments, likes) => {
-  const postIds = new Set(posts.map((post) => post.post_id));
-  const missingComments = comments.filter((c) => !postIds.has(c.post_id)).length;
-  const missingLikes = likes.filter((l) => !postIds.has(l.post_id)).length;
-  return {
-    missingComments,
-    missingLikes
-  };
 };
 
 const buildBarList = (items, maxValue, labelKey, valueKey) => {
@@ -121,23 +101,26 @@ const buildHealth = (items) => {
 };
 
 const init = async () => {
-  const [users, posts, comments, likes] = await Promise.all([
-    loadJson(DATA_FILES.users),
-    loadJson(DATA_FILES.posts),
-    loadJson(DATA_FILES.comments),
-    loadJson(DATA_FILES.likes)
-  ]);
+  const [kpis, health, topUsersResponse, topPostsResponse, recentPostsResponse, activeUsersResponse] =
+    await Promise.all([
+      loadJson(DATA_FILES.kpis),
+      loadJson(DATA_FILES.health),
+      loadJson(DATA_FILES.topUsers),
+      loadJson(DATA_FILES.topPosts),
+      loadJson(DATA_FILES.recentPosts),
+      loadJson(DATA_FILES.activeUsers)
+    ]);
 
   const now = new Date();
   el("currentDate").textContent = formatShortDate(now);
 
-  const totalUsers = users.length;
-  const totalPosts = posts.length;
-  const totalComments = comments.length;
-  const totalLikes = likes.length;
+  const totalUsers = kpis.totalUsers || 0;
+  const totalPosts = kpis.totalPosts || 0;
+  const totalComments = kpis.totalComments || 0;
+  const totalLikes = kpis.totalLikes || 0;
 
-  const avgLikes = totalPosts ? totalLikes / totalPosts : 0;
-  const avgComments = totalPosts ? totalComments / totalPosts : 0;
+  const avgLikes = kpis.avgLikes || 0;
+  const avgComments = kpis.avgComments || 0;
 
   el("kpiUsers").textContent = formatNumber(totalUsers);
   el("kpiUsersMeta").textContent = "registered users";
@@ -151,25 +134,15 @@ const init = async () => {
   el("kpiLikes").textContent = formatNumber(totalLikes);
   el("kpiLikesMeta").textContent = "likes stored";
 
-  const postsByUser = groupBy(posts, "user_id");
-  const topUsers = Array.from(postsByUser.entries())
-    .map(([userId, userPosts]) => {
-      const user = users.find((u) => u.user_id === Number(userId));
-      return {
-        label: user ? user.username : `User ${userId}`,
-        value: userPosts.length
-      };
-    })
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+  const topUsers = (topUsersResponse.items || []).map((user) => ({
+    label: user.username || `User ${user.userId}`,
+    value: user.posts || 0
+  }));
 
-  const topPosts = [...posts]
-    .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
-    .slice(0, 5)
-    .map((post) => ({
-      label: `Post #${post.post_id}`,
-      value: post.likes_count || 0
-    }));
+  const topPosts = (topPostsResponse.items || []).map((post) => ({
+    label: post.post || `Post #${post.postId}`,
+    value: post.likes || 0
+  }));
 
   el("topUsers").innerHTML = buildBarList(
     topUsers,
@@ -184,55 +157,35 @@ const init = async () => {
     "value"
   );
 
-  const recentPosts = [...posts]
-    .map((post) => ({
-      ...post,
-      created_at_date: parseDate(post.created_at)
-    }))
-    .sort((a, b) => {
-      const timeA = a.created_at_date ? a.created_at_date.getTime() : 0;
-      const timeB = b.created_at_date ? b.created_at_date.getTime() : 0;
-      return timeB - timeA;
-    })
-    .slice(0, 8)
-    .map((post) => ({
-      title: post.content.slice(0, 48) + (post.content.length > 48 ? "..." : ""),
-      meta: formatShortDate(post.created_at_date),
-      value: `${formatNumber(post.likes_count || 0)} likes`
-    }));
+  const recentPosts = (recentPostsResponse.items || []).map((post) => {
+    const created = parseDate(post.created_at);
+    const content = post.content || "-";
+    return {
+      title: content.slice(0, 48) + (content.length > 48 ? "..." : ""),
+      meta: formatShortDate(created),
+      value: `${formatNumber(post.likes || 0)} likes`
+    };
+  });
 
   el("recentPosts").innerHTML = buildTableRows(recentPosts);
 
-  const activeUsers = users
-    .map((user) => {
-      const userPosts = postsByUser.get(user.user_id) || [];
-      const commentCount = comments.filter((c) => c.user_id === user.user_id).length;
-      const likeCount = likes.filter((l) => l.user_id === user.user_id).length;
-      return {
-        title: user.username,
-        meta: `${userPosts.length} posts`,
-        value: `${commentCount + likeCount} actions`
-      };
-    })
-    .sort((a, b) => {
-      const aValue = parseInt(a.value, 10) || 0;
-      const bValue = parseInt(b.value, 10) || 0;
-      return bValue - aValue;
-    })
-    .slice(0, 8);
+  const activeUsers = (activeUsersResponse.items || []).map((user) => ({
+    title: user.username || "-",
+    meta: "",
+    value: `${formatNumber(user.actions || 0)} actions`
+  }));
 
   el("activeUsers").innerHTML = buildTableRows(activeUsers);
 
   const engagementItems = [
     { label: "Avg likes per post", value: avgLikes.toFixed(1) },
     { label: "Avg comments per post", value: avgComments.toFixed(1) },
-    { label: "Posts per user", value: (totalPosts / totalUsers).toFixed(2) },
-    { label: "Comments per user", value: (totalComments / totalUsers).toFixed(2) }
+    { label: "Posts per user", value: (kpis.postsPerUser || 0).toFixed(2) },
+    { label: "Comments per user", value: (kpis.commentsPerUser || 0).toFixed(2) }
   ];
 
   el("engagement").innerHTML = buildEngagement(engagementItems);
 
-  const health = computeHealth(posts, comments, likes);
   const healthItems = [
     {
       label: "Comments with missing post",

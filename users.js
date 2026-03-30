@@ -1,9 +1,4 @@
-const DATA_FILES = {
-  users: "/api/users",
-  posts: "/api/posts",
-  comments: "/api/comments",
-  likes: "/api/likes"
-};
+const VIEW_API_BASE = "/api/view";
 
 const el = (id) => document.getElementById(id);
 
@@ -41,10 +36,8 @@ const loadJson = async (path) => {
 };
 
 const state = {
-  users: [],
-  posts: [],
-  comments: [],
-  likes: [],
+  rows: [],
+  total: 0,
   page: 1,
   pageSize: 25,
   view: "top-users",
@@ -70,27 +63,7 @@ const VIEWS = {
     columns: [
       { key: "username", label: "Username", width: "200px" },
       { key: "posts", label: "Posts", width: "120px" }
-    ],
-    load: ["users", "posts"],
-    buildRows: ({ users, posts }) => {
-      const postsCountByUser = new Map();
-      posts.forEach((post) => {
-        const key = post.user_id;
-        postsCountByUser.set(key, (postsCountByUser.get(key) || 0) + 1);
-      });
-
-      return users
-        .map((user) => {
-          const count = postsCountByUser.get(user.user_id) || 0;
-          return {
-            userId: user.user_id,
-            username: user.username || "-",
-            posts: formatNumber(count),
-            sortValue: count
-          };
-        })
-        .sort((a, b) => b.sortValue - a.sortValue);
-    }
+    ]
   },
   "top-posts": {
     title: "Top Posts by Likes",
@@ -99,18 +72,7 @@ const VIEWS = {
     columns: [
       { key: "post", label: "Post", width: "140px" },
       { key: "likes", label: "Likes", width: "120px" }
-    ],
-    load: ["posts"],
-    buildRows: ({ posts }) => {
-      return [...posts]
-        .map((post) => ({
-          postId: post.post_id,
-          post: `Post #${post.post_id}`,
-          likes: formatNumber(post.likes_count || 0),
-          sortValue: post.likes_count || 0
-        }))
-        .sort((a, b) => b.sortValue - a.sortValue);
-    }
+    ]
   },
   "recent-posts": {
     title: "Recent Posts",
@@ -121,23 +83,7 @@ const VIEWS = {
       { key: "created", label: "Created", width: "140px" },
       { key: "likes", label: "Likes", width: "120px" },
       { key: "content", label: "Content", width: "1fr" }
-    ],
-    load: ["posts"],
-    buildRows: ({ posts }) => {
-      return [...posts]
-        .map((post) => {
-          const created = parseDate(post.created_at);
-          return {
-            postId: post.post_id,
-            post: `Post #${post.post_id}`,
-            created: formatShortDate(created),
-            likes: formatNumber(post.likes_count || 0),
-            content: post.content || "-",
-            sortValue: created ? created.getTime() : 0
-          };
-        })
-        .sort((a, b) => b.sortValue - a.sortValue);
-    }
+    ]
   },
   "active-users": {
     title: "Most Active Users",
@@ -146,34 +92,7 @@ const VIEWS = {
     columns: [
       { key: "username", label: "Username", width: "200px" },
       { key: "actions", label: "Actions", width: "120px" }
-    ],
-    load: ["users", "comments", "likes"],
-    buildRows: ({ users, comments, likes }) => {
-      const commentsByUser = new Map();
-      const likesByUser = new Map();
-
-      comments.forEach((comment) => {
-        const key = comment.user_id;
-        commentsByUser.set(key, (commentsByUser.get(key) || 0) + 1);
-      });
-
-      likes.forEach((like) => {
-        const key = like.user_id;
-        likesByUser.set(key, (likesByUser.get(key) || 0) + 1);
-      });
-
-      return users
-        .map((user) => {
-          const actions = (commentsByUser.get(user.user_id) || 0) + (likesByUser.get(user.user_id) || 0);
-          return {
-            userId: user.user_id,
-            username: user.username || "-",
-            actions: formatNumber(actions),
-            sortValue: actions
-          };
-        })
-        .sort((a, b) => b.sortValue - a.sortValue);
-    }
+    ]
   }
 };
 
@@ -208,91 +127,20 @@ const buildRows = (rows, columns, template) => {
     .join("");
 };
 
-const computeRows = (viewKey) => {
-  const view = VIEWS[viewKey];
-  if (!view) return [];
-  return view.buildRows({
-    users: state.users,
-    posts: state.posts,
-    comments: state.comments,
-    likes: state.likes
-  });
-};
-
-const buildPostGridRows = (viewKey) => {
-  const userMap = new Map(state.users.map((user) => [user.user_id, user]));
-  const postMap = new Map(state.posts.map((post) => [post.post_id, post]));
-  const viewRows = computeRows(viewKey);
-
-  const postRows = (post) => {
-    const created = parseDate(post.created_at);
-    const user = userMap.get(post.user_id);
-    return {
-      postId: post.post_id,
-      title: `Post #${post.post_id}`,
-      created: formatShortDate(created),
-      likes: formatNumber(post.likes_count || 0),
-      author: user?.username || `User #${post.user_id}`,
-      content: post.content || "-"
-    };
-  };
-
-  if (viewKey === "top-posts" || viewKey === "recent-posts") {
-    return viewRows
-      .map((row) => postMap.get(row.postId))
-      .filter(Boolean)
-      .map((post) => postRows(post));
-  }
-
-  const postsByUser = new Map();
-  state.posts.forEach((post) => {
-    if (!postsByUser.has(post.user_id)) {
-      postsByUser.set(post.user_id, []);
-    }
-    postsByUser.get(post.user_id).push(post);
-  });
-
-  return viewRows
-    .flatMap((row) => postsByUser.get(row.userId) || [])
-    .map((post) => postRows(post));
-};
-
-const buildUserGridRows = (viewKey) => {
-  const userMap = new Map(state.users.map((user) => [user.user_id, user]));
-  const viewRows = computeRows(viewKey);
-
-  return viewRows.map((row) => {
-    const user = userMap.get(row.userId);
-    const created = parseDate(user?.created_at);
-    const metric = row.posts ?? row.actions ?? "-";
-    const metricLabel = row.posts ? "Posts" : row.actions ? "Actions" : "Score";
-
-    return {
-      userId: row.userId,
-      username: user?.username || row.username || "-",
-      email: user?.email || "-",
-      created: formatShortDate(created),
-      bio: user?.bio || "-",
-      metric,
-      metricLabel
-    };
-  });
-};
-
 const buildPostsGrid = (rows) => {
   return rows
     .map(
       (row) => `
         <article class="post-card">
-          <div class="post-card-title">${escapeHtml(row.title)}</div>
+          <div class="post-card-title">${escapeHtml(row.title || "-")}</div>
           <div class="post-card-meta">
-            <span>${escapeHtml(row.created)}</span>
-            <span>${escapeHtml(row.likes)} likes</span>
+            <span>${escapeHtml(formatShortDate(parseDate(row.created_at)))}</span>
+            <span>${escapeHtml(formatNumber(row.likes || 0))} likes</span>
           </div>
-          <p class="post-card-body">${escapeHtml(row.content)}</p>
+          <p class="post-card-body">${escapeHtml(row.content || "-")}</p>
           <div class="post-card-footer">
-            <span class="post-chip">${escapeHtml(row.author)}</span>
-            <span class="post-chip">ID ${escapeHtml(row.postId)}</span>
+            <span class="post-chip">${escapeHtml(row.author || "-")}</span>
+            <span class="post-chip">ID ${escapeHtml(row.postId || "-")}</span>
           </div>
         </article>
       `
@@ -305,15 +153,15 @@ const buildUserGrid = (rows) => {
     .map(
       (row) => `
         <article class="profile-card">
-          <div class="profile-card-title">${escapeHtml(row.username)}</div>
+          <div class="profile-card-title">${escapeHtml(row.username || "-")}</div>
           <div class="profile-card-meta">
-            <span>${escapeHtml(row.email)}</span>
-            <span>${escapeHtml(row.created)}</span>
+            <span>${escapeHtml(row.email || "-")}</span>
+            <span>${escapeHtml(formatShortDate(parseDate(row.created_at)))}</span>
           </div>
-          <p class="profile-card-body">${escapeHtml(row.bio)}</p>
+          <p class="profile-card-body">${escapeHtml(row.bio || "-")}</p>
           <div class="profile-card-footer">
-            <span class="profile-chip">ID ${escapeHtml(row.userId)}</span>
-            <span class="profile-chip">${escapeHtml(row.metric)} ${escapeHtml(row.metricLabel)}</span>
+            <span class="profile-chip">ID ${escapeHtml(row.userId || "-")}</span>
+            <span class="profile-chip">${escapeHtml(formatNumber(row.metric ?? row.actions ?? row.posts ?? 0))} ${escapeHtml(row.metricLabel || "Score")}</span>
           </div>
         </article>
       `
@@ -328,19 +176,12 @@ const render = () => {
   const detailToggle = el("detailToggle");
   const isUserView = state.view === "top-users" || state.view === "active-users";
 
-  let rows = [];
-  if (state.showDetails) {
-    rows = isUserView ? buildUserGridRows(state.view) : buildPostGridRows(state.view);
-  } else {
-    rows = computeRows(state.view);
-  }
-
-  const totalRows = rows.length;
+  const rows = state.rows;
+  const totalRows = state.total;
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
   state.page = Math.min(state.page, totalPages);
 
-  const start = (state.page - 1) * pageSize;
-  const pageRows = rows.slice(start, start + pageSize);
+  detailToggle.disabled = false;
 
   el("totalRows").textContent = formatNumber(totalRows);
   el("pageInfo").textContent = `Page ${state.page} of ${totalPages}`;
@@ -356,12 +197,12 @@ const render = () => {
       el("totalLabel").textContent = "users";
       tableEl.classList.add("profile-grid");
       tableEl.classList.remove("post-grid");
-      tableEl.innerHTML = buildUserGrid(pageRows);
+      tableEl.innerHTML = buildUserGrid(rows);
     } else {
       el("totalLabel").textContent = "posts";
       tableEl.classList.add("post-grid");
       tableEl.classList.remove("profile-grid");
-      tableEl.innerHTML = buildPostsGrid(pageRows);
+      tableEl.innerHTML = buildPostsGrid(rows);
     }
   } else {
     const columns = view.columns;
@@ -374,7 +215,25 @@ const render = () => {
     tableEl.classList.add("table-wide");
     tableEl.classList.remove("post-grid");
     tableEl.classList.remove("profile-grid");
-    tableEl.innerHTML = buildHeader(columns, template) + buildRows(pageRows, columns, template);
+    const tableRows = rows.map((row) => {
+      const normalized = { ...row };
+      columns.forEach((column) => {
+        if (column.key === "created") {
+          const source = normalized.created ?? normalized.created_at;
+          normalized[column.key] = formatShortDate(parseDate(source));
+          return;
+        }
+        if (column.key === "created_at") {
+          normalized[column.key] = formatShortDate(parseDate(normalized[column.key]));
+          return;
+        }
+        if (typeof normalized[column.key] === "number") {
+          normalized[column.key] = formatNumber(normalized[column.key]);
+        }
+      });
+      return normalized;
+    });
+    tableEl.innerHTML = buildHeader(columns, template) + buildRows(tableRows, columns, template);
   }
 };
 
@@ -385,13 +244,13 @@ const getViewKey = () => {
 };
 
 const loadData = async (viewKey) => {
-  const view = VIEWS[viewKey];
-  const requests = view.load.map((key) => loadJson(DATA_FILES[key]));
-  const results = await Promise.all(requests);
-
-  view.load.forEach((key, index) => {
-    state[key] = results[index];
-  });
+  const params = new URLSearchParams();
+  params.set("page", state.page);
+  params.set("limit", state.pageSize);
+  params.set("detail", state.showDetails ? "1" : "0");
+  const response = await loadJson(`${VIEW_API_BASE}/${viewKey}?${params.toString()}`);
+  state.rows = response.items || [];
+  state.total = response.total || 0;
 };
 
 const updateViewTooltips = () => {
@@ -408,10 +267,6 @@ const applyView = async (viewKey, keepDetails = false) => {
   state.showDetails = keepDetails;
   state.page = 1;
   await loadData(viewKey);
-  if (state.showDetails) {
-    await ensureLoaded("users");
-    await ensureLoaded("posts");
-  }
   const view = VIEWS[viewKey];
   el("viewTitle").textContent = view.title;
   el("viewEyebrow").textContent = view.eyebrow;
@@ -420,13 +275,10 @@ const applyView = async (viewKey, keepDetails = false) => {
   render();
 };
 
-const ensureLoaded = async (key) => {
-  if (state[key] && state[key].length) return;
-  state[key] = await loadJson(DATA_FILES[key]);
-};
-
 const init = async () => {
   state.view = getViewKey();
+  const pageSizeSelect = el("pageSize");
+  state.pageSize = parseInt(pageSizeSelect.value, 10);
   await loadData(state.view);
 
   const view = VIEWS[state.view];
@@ -434,22 +286,17 @@ const init = async () => {
   el("viewEyebrow").textContent = view.eyebrow;
   document.title = `${view.title} - Admin Dashboard`;
 
-  const pageSizeSelect = el("pageSize");
-  state.pageSize = parseInt(pageSizeSelect.value, 10);
-
-  pageSizeSelect.addEventListener("change", (event) => {
+  pageSizeSelect.addEventListener("change", async (event) => {
     state.pageSize = parseInt(event.target.value, 10);
     state.page = 1;
+    await loadData(state.view);
     render();
   });
 
   el("detailToggle").addEventListener("click", async () => {
     state.showDetails = !state.showDetails;
-    if (state.showDetails) {
-      await ensureLoaded("posts");
-      await ensureLoaded("users");
-      state.page = 1;
-    }
+    state.page = 1;
+    await loadData(state.view);
     render();
   });
 
@@ -467,12 +314,12 @@ const init = async () => {
 
   el("prevPage").addEventListener("click", () => {
     state.page = Math.max(1, state.page - 1);
-    render();
+    loadData(state.view).then(render).catch(console.error);
   });
 
   el("nextPage").addEventListener("click", () => {
     state.page = state.page + 1;
-    render();
+    loadData(state.view).then(render).catch(console.error);
   });
 
   render();
