@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const usersListContainer = document.getElementById("usersList");
   let allUsers = [];
 
-  fetch("users.json")
+  fetch("/api/users")
     .then(response => response.json())
     .then(users => {
       allUsers = users;

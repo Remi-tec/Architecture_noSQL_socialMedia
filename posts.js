@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const postsFeedContainer = document.getElementById("postsFeed");
-  const dataSource = 'posts.json';
+  const dataSource = '/api/posts';
 
   function loadPosts() {
     fetch(dataSource)
