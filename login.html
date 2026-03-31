@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connexion - Mon Réseau</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* Un peu de CSS intégré pour que ce soit propre tout de suite */
+    body { font-family: 'Space Grotesk', sans-serif; background-color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .login-container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); width: 100%; max-width: 400px; }
+    input { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+    .user-list { max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
+    .user-item { padding: 10px; border-bottom: 1px solid #e2e8f0; cursor: pointer; display: flex; flex-direction: column; }
+    .user-item:hover { background-color: #f1f5f9; }
+    .user-item:last-child { border-bottom: none; }
+    .user-name { font-weight: bold; }
+    .user-email { font-size: 0.8em; color: #64748b; }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <h2>Qui êtes-vous ?</h2>
+    <p style="color: #64748b; font-size: 0.9em;">Recherchez et cliquez sur votre profil pour vous connecter.</p>
+    
+    <input type="text" id="searchInput" placeholder="Rechercher un pseudo..." />
+    
+    <div id="usersList" class="user-list">
+      </div>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>
