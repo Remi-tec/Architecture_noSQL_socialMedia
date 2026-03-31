@@ -19,15 +19,15 @@ const COLLECTION_CONFIG = {
     title: "Posts",
     label: "posts",
     idField: "post_id",
-    requiredFields: ["post_id", "user_id_ref", "created_at", "likes_count", "content"],
+    requiredFields: ["post_id", "user_id_ref", "created_at", "image_url", "content"],
     columns: [
       { key: "post_id", label: "Post ID", width: "120px" },
       { key: "user_id", label: "User ID", width: "120px" },
       { key: "created_at", label: "Created", width: "160px" },
-      { key: "likes_count", label: "Likes", width: "120px" },
+      { key: "image_url", label: "Image URL", width: "200px" },
       { key: "content", label: "Content", width: "1fr" }
     ],
-    createFields: ["post_id", "user_id_ref", "created_at", "likes_count", "content"]
+    createFields: ["post_id", "user_id_ref", "created_at", "image_url", "content"]
   },
   comments: {
     title: "Comments",
@@ -481,8 +481,8 @@ const updateFormVisibility = () => {
 
 const buildUpdatePayload = () => {
   const config = COLLECTION_CONFIG[state.view];
-  const payload = {};
 
+  const payload = {};
   config.createFields.forEach((fieldId) => {
     // Special handling for post_id
     if (fieldId === "post_id") {
@@ -490,35 +490,45 @@ const buildUpdatePayload = () => {
         const elField = el("post_id");
         if (elField) {
           const value = elField.textContent.trim();
-          if (value && value !== "-") payload[fieldId] = value;
+          payload[fieldId] = value && value !== "-" ? value : null;
         }
       } else {
         const elField = el("post_id_input");
         if (elField) {
           const value = elField.value.trim();
-          if (value) payload[fieldId] = Number(value);
+          payload[fieldId] = value ? Number(value) : null;
         }
       }
       return;
     }
     const elField = el(fieldId);
-    if (!elField) return;
+    if (!elField) {
+      payload[fieldId] = null;
+      return;
+    }
     if (elField.tagName === "INPUT") {
       const value = elField.value.trim();
-      if (!value) return;
       if (elField.type === "number") {
-        payload[fieldId] = Number(value);
+        payload[fieldId] = value ? Number(value) : 0;
       } else {
-        payload[fieldId] = value;
+        payload[fieldId] = value || null;
       }
     } else {
       // readonly-value divs (id, created_at)
       if (fieldId === config.idField || fieldId === "created_at") {
         const value = elField.textContent.trim();
-        if (value && value !== "-") payload[fieldId] = value;
+        payload[fieldId] = value && value !== "-" ? value : null;
+      } else {
+        payload[fieldId] = null;
       }
     }
   });
+
+  // Initialiser likes_count/comments_count à 0 si non fournis (pour posts)
+  if (state.view === "posts") {
+    if (payload.likes_count == null || isNaN(payload.likes_count)) payload.likes_count = 0;
+    if (payload.comments_count == null || isNaN(payload.comments_count)) payload.comments_count = 0;
+  }
 
   if (payload.user_id_ref != null) {
     payload.user_id = payload.user_id_ref;

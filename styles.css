@@ -1,3 +1,23 @@
+/* Style pour le bouton Administration */
+.admin-btn {
+  background: var(--accent-2);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 139, 141, 0.12);
+  transition: background 0.2s, transform 0.2s;
+  text-decoration: none;
+  margin-left: 10px;
+}
+.admin-btn:hover, .admin-btn:focus {
+  background: var(--accent-3);
+  transform: translateY(-2px) scale(1.04);
+  text-decoration: underline;
+}
 :root {
   --bg: #f7f1e8;
   --bg-2: #f3e9dc;

@@ -24,6 +24,7 @@
   <div class="user-menu" style="display: flex; align-items: center; gap: 15px;">
     <span class="utlilisateurannonce" id="loggedInUser" >Non connecté</span>
     <button class="deconect" id="logoutBtn" >Déconnexion</button>
+    <a href="index.html" id="adminBtn" style="display:none;" class="admin-btn">Administration</a>
   </div>
 </nav>
   
@@ -42,5 +43,14 @@
   
 
   <script src="posts.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const currentUsername = localStorage.getItem("currentUser_name");
+      const adminBtn = document.getElementById("adminBtn");
+      if (currentUsername === "Admin" && adminBtn) {
+        adminBtn.style.display = "inline-block";
+      }
+    });
+  </script>
 </body>
 </html>
