@@ -1,3 +1,41 @@
+/* Images responsives dans les posts */
+.post-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 10px 0 0 0;
+  border-radius: 10px;
+  object-fit: cover;
+  max-height: 320px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  transition: max-height 0.2s;
+}
+
+@media (max-width: 900px) {
+  .post-grid {
+    grid-template-columns: 1fr;
+  }
+  .post-card {
+    min-width: 0;
+    padding: 10px 6px;
+  }
+  .post-image {
+    max-height: 200px;
+  }
+}
+
+@media (max-width: 600px) {
+  .content {
+    padding: 8px;
+  }
+  .post-card {
+    padding: 7px 2px;
+    font-size: 15px;
+  }
+  .post-image {
+    max-height: 120px;
+  }
+}
 /* Style pour le bouton Administration */
 .admin-btn {
   background: var(--accent-2);
