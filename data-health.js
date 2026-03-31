@@ -123,7 +123,28 @@ const render = () => {
 
   el("totalRows").textContent = formatNumber(totalRows);
   el("totalLabel").textContent = view.label;
-  el("pageInfo").textContent = `Page ${state.page} of ${totalPages}`;
+  // Ajoute un input pour la navigation directe à une page
+  const pageInfo = el("pageInfo");
+  pageInfo.innerHTML = `Page <input id=\"pageJumpInput\" type=\"number\" min=\"1\" max=\"${totalPages}\" value=\"${state.page}\" style=\"width:3em;text-align:center;\"> of ${totalPages}`;
+  // Attache le handler Enter/change à chaque render
+  setTimeout(() => {
+    const input = document.getElementById("pageJumpInput");
+    if (input) {
+      const goToPage = () => {
+        let val = parseInt(input.value, 10);
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > totalPages) val = totalPages;
+        state.page = val;
+        loadData().then(render).catch(console.error);
+      };
+      input.addEventListener("change", goToPage);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          goToPage();
+        }
+      });
+    }
+  }, 0);
   el("prevPage").disabled = state.page <= 1;
   el("nextPage").disabled = state.page >= totalPages;
 

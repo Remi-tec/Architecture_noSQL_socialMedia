@@ -184,7 +184,28 @@ const render = () => {
   detailToggle.disabled = false;
 
   el("totalRows").textContent = formatNumber(totalRows);
-  el("pageInfo").textContent = `Page ${state.page} of ${totalPages}`;
+  // Ajoute un input pour la navigation directe à une page
+  const pageInfo = el("pageInfo");
+  pageInfo.innerHTML = `Page <input id="pageJumpInput" type="number" min="1" max="${totalPages}" value="${state.page}" style="width:3em;text-align:center;"> of ${totalPages}`;
+  // Attache le handler Enter/change à chaque render
+  setTimeout(() => {
+    const input = document.getElementById("pageJumpInput");
+    if (input) {
+      const goToPage = () => {
+        let val = parseInt(input.value, 10);
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > totalPages) val = totalPages;
+        state.page = val;
+        loadData(state.view).then(render).catch(console.error);
+      };
+      input.addEventListener("change", goToPage);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          goToPage();
+        }
+      });
+    }
+  }, 0);
   el("prevPage").disabled = state.page <= 1;
   el("nextPage").disabled = state.page >= totalPages;
 
@@ -276,6 +297,29 @@ const applyView = async (viewKey, keepDetails = false) => {
   document.title = `${VIEWS[viewKey].title} - Admin Dashboard`;
   updateViewTooltips();
   render();
+  // Ajoute le handler pour l'input de page après chaque render
+  const attachPageJumpHandler = () => {
+    const input = document.getElementById("pageJumpInput");
+    if (input) {
+      const goToPage = () => {
+        let val = parseInt(input.value, 10);
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > Math.max(1, Math.ceil(state.total / state.pageSize))) val = Math.max(1, Math.ceil(state.total / state.pageSize));
+        state.page = val;
+        loadData(state.view).then(() => { render(); attachPageJumpHandler(); });
+      };
+      input.addEventListener("change", goToPage);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          goToPage();
+        }
+      });
+    }
+  };
+  // Patch le render pour toujours réattacher le handler
+  const origRender = render;
+  render = function() { origRender(); attachPageJumpHandler(); };
+  attachPageJumpHandler();
 };
 
 const init = async () => {
