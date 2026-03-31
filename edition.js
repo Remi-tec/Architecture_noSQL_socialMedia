@@ -5,7 +5,7 @@ const COLLECTION_CONFIG = {
     title: "Users",
     label: "users",
     idField: "user_id",
-    requiredFields: ["user_id"],
+    requiredFields: ["user_id", "username", "email", "created_at", "bio"],
     columns: [
       { key: "user_id", label: "User ID", width: "120px" },
       { key: "username", label: "Username", width: "180px" },
@@ -19,7 +19,7 @@ const COLLECTION_CONFIG = {
     title: "Posts",
     label: "posts",
     idField: "post_id",
-    requiredFields: ["post_id"],
+    requiredFields: ["post_id", "user_id_ref", "created_at", "likes_count", "content"],
     columns: [
       { key: "post_id", label: "Post ID", width: "120px" },
       { key: "user_id", label: "User ID", width: "120px" },
@@ -33,7 +33,7 @@ const COLLECTION_CONFIG = {
     title: "Comments",
     label: "comments",
     idField: "comment_id",
-    requiredFields: ["comment_id"],
+    requiredFields: ["comment_id", "post_id", "user_id_ref", "created_at", "content"],
     columns: [
       { key: "comment_id", label: "Comment ID", width: "120px" },
       { key: "post_id", label: "Post ID", width: "120px" },
@@ -47,7 +47,7 @@ const COLLECTION_CONFIG = {
     title: "Likes",
     label: "likes",
     idField: "like_id",
-    requiredFields: ["like_id"],
+    requiredFields: ["like_id", "post_id", "user_id_ref", "created_at"],
     columns: [
       { key: "like_id", label: "Like ID", width: "120px" },
       { key: "post_id", label: "Post ID", width: "120px" },
@@ -436,7 +436,11 @@ const updateFormVisibility = () => {
         if (target) target.style.display = "grid";
       } else {
         const target = document.getElementById("postIdInputField");
-        if (target) target.style.display = "grid";
+        if (target) {
+          target.style.display = "grid";
+          const input = target.querySelector("input");
+          if (input) input.required = true;
+        }
       }
       return;
     }
@@ -626,24 +630,14 @@ const init = async () => {
         const createdAtDiv = el("created_at");
         if (createdAtDiv) createdAtDiv.textContent = dateStr;
       }
-      // Générer l'id comme max+1
-      if (config.createFields.includes(config.idField)) {
-        let maxId = 0;
-        if (state.rows && state.rows.length > 0) {
-          // Cherche le max id numérique
-          state.rows.forEach(row => {
-            const val = Number(row[config.idField]);
-            if (!isNaN(val) && val > maxId) maxId = val;
-          });
-        }
-        payload[config.idField] = maxId + 1;
-        const idDiv = el(config.idField);
-        if (idDiv && idDiv.tagName !== "INPUT") idDiv.textContent = payload[config.idField];
-      }
       // Correction user_id_ref -> user_id si besoin
       if (payload.user_id_ref != null) {
         payload.user_id = payload.user_id_ref;
         delete payload.user_id_ref;
+      }
+      // Supprime le champ id pour forcer le backend à le générer
+      if (payload[config.idField] !== undefined) {
+        delete payload[config.idField];
       }
       try {
         await loadJson(`/api/${state.view}`, {

@@ -1,3 +1,10 @@
+// Fonction pour obtenir le prochain id auto-incrémenté (max id + 1, sans collection counter)
+async function getNextSequence(name) {
+  const idField = ID_FIELDS[name];
+  const maxDoc = await db.collection(name).find().sort({ [idField]: -1 }).limit(1).toArray();
+  const maxId = maxDoc.length > 0 ? Number(maxDoc[0][idField]) : 0;
+  return maxId + 1;
+}
 const express = require("express");
 const { MongoClient } = require("mongodb");
 
@@ -457,9 +464,16 @@ app.post("/api/:collection", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
+
   const idField = ID_FIELDS[collection];
+  // Si l'id n'est pas fourni, on le génère via counter
   if (payload[idField] == null) {
-    return res.status(400).json({ error: `Missing ${idField}` });
+    try {
+      payload[idField] = await getNextSequence(collection);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Failed to generate id" });
+    }
   }
 
   try {
