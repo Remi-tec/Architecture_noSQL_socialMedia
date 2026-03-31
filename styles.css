@@ -823,3 +823,32 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+.utlilisateurannonce{
+font-weight: 500; 
+color: #3b82f6;
+}
+
+.deconect{
+  padding: 8px 15px; 
+  border: none; 
+  background: #ef4444; 
+  color: white; 
+  border-radius: 6px; 
+  cursor: pointer;;
+}
+
+.user-navbar {
+
+  display: flex;
+ justify-content: space-between; 
+  align-items: center;
+ padding: 15px 30px;
+  background: white;
+   border-bottom: 1px solid #e2e8f0; 
+  margin-bottom: 20px;
+}
+
+.twitter{
+  font-weight: 700; 
+  font-size: 1.2rem;
+}

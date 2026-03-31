@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flux des Posts - Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <nav class="user-navbar" >
+  <div class="twitter" >
+    twitter
+  </div>
+  
+  <div class="nav-links" style="display: flex; gap: 20px;">
+    
+    <a class="nav-item" href="resaux.html" >Flux</a>
+   
+  </div>
+
+  <div class="user-menu" style="display: flex; align-items: center; gap: 15px;">
+    <span class="utlilisateurannonce" id="loggedInUser" >Non connecté</span>
+    <button class="deconect" id="logoutBtn" >Déconnexion</button>
+  </div>
+</nav>
+  
+    
+
+
+    <main class="content">
+  
+
+      <section class="feed-section">
+        <div id="postsFeed" class="posts-feed">
+           </div>
+      </section>
+      
+    </main>
+  
+
+  <script src="posts.js"></script>
+</body>
+</html>
