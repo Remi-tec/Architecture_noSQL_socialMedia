@@ -60,7 +60,20 @@ document.addEventListener("DOMContentLoaded", () => {
     loading = false;
   }
 
-  function renderPostsBatch() {
+
+  async function fetchComments(postId) {
+    const res = await fetch(`/api/comments?post_id=${postId}`);
+    if (!res.ok) return [];
+    return res.json();
+  }
+
+  async function fetchLikes(postId) {
+    const res = await fetch(`/api/likes?post_id=${postId}`);
+    if (!res.ok) return [];
+    return res.json();
+  }
+
+  async function renderPostsBatch() {
     const start = postsFeedContainer.childElementCount;
     const end = Math.min(loadedPosts.length, start + POSTS_BATCH_SIZE + POSTS_BUFFER);
     for (let i = start; i < end; i++) {
@@ -73,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const username = userMap[post.user_id] || `User #${post.user_id}`;
       const postElement = document.createElement("div");
       postElement.classList.add("post-card");
+
       postElement.innerHTML = `
         <div class="post-header">
           <div class="post-author"><strong>${username}</strong></div>
@@ -83,14 +97,176 @@ document.addEventListener("DOMContentLoaded", () => {
           ${imageHtml}
         </div>
         <div class="post-footer">
-          <span>❤️ ${post.likes_count} Likes</span>
-          <span>💬 ${post.comments_count} Comm.</span>
+          <button class="like-btn" data-post-id="${post.post_id}">❤️ <span class="like-count">${post.likes_count ?? 0}</span> Like</button>
+          <button class="toggle-comments-btn" data-post-id="${post.post_id}" style="margin-left:10px;">💬 <span class="comment-count">${post.comments_count ?? 0}</span> Commentaires</button>
+        </div>
+        <div class="comments-section" id="comments-for-${post.post_id}" style="display:none;">
+          <div class="comments-list"></div>
+          <button class="load-more-comments-btn" style="display:none;margin:8px auto 0 auto;">▼ Afficher plus</button>
+          <form class="add-comment-form" style="margin-top:8px;display:none;">
+            <input type="text" class="comment-input" placeholder="Ajouter un commentaire..." required style="width:70%;padding:6px;" />
+            <button type="submit" class="comment-submit-btn">Envoyer</button>
+          </form>
         </div>
       `;
       postsFeedContainer.appendChild(postElement);
+
+      // Gestion des commentaires (affichage progressif)
+      const commentsSection = postElement.querySelector('.comments-section');
+      const commentsList = commentsSection.querySelector('.comments-list');
+      const addCommentForm = commentsSection.querySelector('.add-comment-form');
+      const loadMoreBtn = commentsSection.querySelector('.load-more-comments-btn');
+      let allComments = [];
+      let commentsDisplayed = 0;
+      const COMMENTS_PAGE_SIZE = 5;
+
+      async function showNextComments() {
+        const next = allComments.slice(commentsDisplayed, commentsDisplayed + COMMENTS_PAGE_SIZE);
+        next.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'comment-item';
+          div.innerHTML = `<b>${userMap[c.user_id] || 'User #' + c.user_id}</b> : ${c.content}`;
+          commentsList.appendChild(div);
+        });
+        commentsDisplayed += next.length;
+        if (commentsDisplayed < allComments.length) {
+          loadMoreBtn.style.display = '';
+        } else {
+          loadMoreBtn.style.display = 'none';
+        }
+      }
+
+      async function loadAndDisplayCommentsOnDemand() {
+        allComments = (await fetchComments(post.post_id)).filter(c => c.post_id == post.post_id);
+        commentsList.innerHTML = '';
+        commentsDisplayed = 0;
+        showNextComments();
+        // Met à jour le compteur
+        const commentCountSpan = postElement.querySelector('.comment-count');
+        if (commentCountSpan) commentCountSpan.textContent = allComments.length;
+      }
+
+      loadMoreBtn.addEventListener('click', showNextComments);
+
+      // Afficher/Masquer les commentaires au clic
+      const toggleCommentsBtn = postElement.querySelector('.toggle-comments-btn');
+      let commentsLoaded = false;
+      toggleCommentsBtn.addEventListener('click', async () => {
+        if (commentsSection.style.display === 'none') {
+          commentsSection.style.display = '';
+          if (!commentsLoaded) {
+            await loadAndDisplayCommentsOnDemand();
+            commentsLoaded = true;
+          }
+        } else {
+          commentsSection.style.display = 'none';
+        }
+      });
+
+      // Ajout de commentaire
+      if (currentUserId && currentUsername) {
+        addCommentForm.style.display = "flex";
+        addCommentForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const input = addCommentForm.querySelector('.comment-input');
+          const content = input.value.trim();
+          if (!content) return;
+          const payload = {
+            post_id: Number(post.post_id),
+            user_id: Number(currentUserId),
+            content,
+            created_at: new Date().toISOString().slice(0, 10)
+          };
+          const res = await fetch('/api/comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            input.value = '';
+            await loadAndDisplayCommentsOnDemand();
+          }
+        });
+      }
+
+      // Affichage des likes
+      const likeBtn = postElement.querySelector('.like-btn');
+      if (currentUserId && currentUsername) {
+        likeBtn.disabled = false;
+        likeBtn.onclick = async () => {
+          // Vérifie si déjà liké
+          const likes = await fetchLikes(post.post_id);
+          const userLike = likes.find(like => String(like.user_id) === String(currentUserId) && String(like.post_id) === String(post.post_id) && like.like_id !== undefined && like.like_id !== null);
+          if (userLike) {
+            // Retirer le like
+            await fetch(`/api/likes/${userLike.like_id}`, { method: 'DELETE' });
+            await loadAndDisplayLikes(post.post_id, likeBtn, postElement);
+          } else {
+            // Ajouter le like
+            const payload = {
+              post_id: Number(post.post_id),
+              user_id: Number(currentUserId),
+              created_at: new Date().toISOString().slice(0, 10)
+            };
+            const res = await fetch('/api/likes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+              await loadAndDisplayLikes(post.post_id, likeBtn, postElement);
+            }
+          }
+        };
+      } else {
+        likeBtn.disabled = true;
+      }
+
+      // Chargement initial des likes uniquement
+      await loadAndDisplayLikes(post.post_id, likeBtn, postElement);
     }
     observeLastCard();
   }
+
+  // plus utilisé : loadAndDisplayComments
+
+      async function loadAndDisplayLikes(postId, likeBtn, postElement) {
+        const likes = await fetchLikes(postId);
+        // Met à jour le compteur en rechargeant la vraie valeur depuis l'API du post
+        const likeCountSpan = likeBtn.querySelector('.like-count');
+        // Recharge la valeur du post depuis l'API
+        try {
+          const res = await fetch(`/api/posts?post_id=${postId}`);
+          const posts = await res.json();
+          const postObj = Array.isArray(posts) ? posts.find(p => String(p.post_id) === String(postId)) : null;
+          if (likeCountSpan) {
+            if (postObj && typeof postObj.likes_count === 'number') {
+              likeCountSpan.textContent = postObj.likes_count;
+            } else {
+              likeCountSpan.textContent = likes.length;
+            }
+          }
+        } catch {
+          if (likeCountSpan) likeCountSpan.textContent = likes.length;
+        }
+
+        // Gestion du bouton like/unlike
+        let userLike = null;
+        if (currentUserId) {
+          userLike = likes.find(like => String(like.user_id) === String(currentUserId) && String(like.post_id) === String(postId) && like.like_id !== undefined && like.like_id !== null);
+        }
+
+        // Supprime le style "déjà liké" si présent
+        likeBtn.classList.remove('liked');
+        likeBtn.title = '';
+        likeBtn.disabled = false;
+
+        if (userLike && userLike.like_id !== undefined && userLike.like_id !== null) {
+          // Style visuel différent pour indiquer que l'utilisateur a déjà liké
+          likeBtn.classList.add('liked');
+          likeBtn.title = "Vous avez déjà liké ce post";
+        }
+      }
 
   function observeLastCard() {
     if (observer) observer.disconnect();

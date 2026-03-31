@@ -1,3 +1,17 @@
+/* Bouton Like déjà liké */
+.like-btn.liked {
+  background: #ffebee;
+  color: #e53935;
+  border: 1.5px solid #e53935;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(229,57,53,0.08);
+  transition: background 0.2s, color 0.2s, border 0.2s;
+}
+.like-btn.liked:hover, .like-btn.liked:focus {
+  background: #ffcdd2;
+  color: #b71c1c;
+  border-color: #b71c1c;
+}
 /* Images responsives dans les posts */
 .post-image {
   max-width: 100%;

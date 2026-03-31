@@ -477,7 +477,36 @@ app.post("/api/:collection", async (req, res) => {
   }
 
   try {
+    // Empêche les doublons de like pour un même user_id/post_id
+    if (collection === "likes" && payload.post_id != null && payload.user_id != null) {
+      const postIdNum = typeof payload.post_id === 'string' ? parseInt(payload.post_id, 10) : payload.post_id;
+      const userIdNum = typeof payload.user_id === 'string' ? parseInt(payload.user_id, 10) : payload.user_id;
+      const existingLike = await db.collection("likes").findOne({ post_id: postIdNum, user_id: userIdNum });
+      if (existingLike) {
+        return res.status(409).json({ error: "Like already exists" });
+      }
+    }
     await db.collection(collection).insertOne(payload);
+    // Si on ajoute un commentaire, on incrémente comments_count du post concerné
+    if (collection === "comments" && payload.post_id != null) {
+      const postIdNum = typeof payload.post_id === 'string' ? parseInt(payload.post_id, 10) : payload.post_id;
+      if (!isNaN(postIdNum)) {
+        await db.collection("posts").updateOne(
+          { post_id: postIdNum },
+          { $inc: { comments_count: 1 } }
+        );
+      }
+    }
+    // Si on ajoute un like, on incrémente likes_count du post concerné
+    if (collection === "likes" && payload.post_id != null) {
+      const postIdNum = typeof payload.post_id === 'string' ? parseInt(payload.post_id, 10) : payload.post_id;
+      if (!isNaN(postIdNum)) {
+        await db.collection("posts").updateOne(
+          { post_id: postIdNum },
+          { $inc: { likes_count: 1 } }
+        );
+      }
+    }
     return res.status(201).json({ ok: true });
   } catch (error) {
     console.error(error);
@@ -498,6 +527,19 @@ app.delete("/api/:collection/:id", async (req, res) => {
   }
 
   try {
+    // Pour les likes, décrémente likes_count du post concerné
+    if (collection === "likes") {
+      const likeDoc = await db.collection("likes").findOne({ [idField]: idValue });
+      if (likeDoc && likeDoc.post_id != null) {
+        const postIdNum = typeof likeDoc.post_id === 'string' ? parseInt(likeDoc.post_id, 10) : likeDoc.post_id;
+        if (!isNaN(postIdNum)) {
+          await db.collection("posts").updateOne(
+            { post_id: postIdNum },
+            { $inc: { likes_count: -1 } }
+          );
+        }
+      }
+    }
     const result = await db.collection(collection).deleteOne({ [idField]: idValue });
     if (!result.deletedCount) {
       return res.status(404).json({ error: "Not found" });
